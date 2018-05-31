@@ -19,8 +19,10 @@ public:
 private:
     cv::SVM svm;
 
-    void findRectangles(const cv::Mat& image, std::vector<cv::Mat> rectangles);
+    void findRectangles(const cv::Mat& image, std::vector<cv::Rect>& rectangles);
     cv::Point2f lineIntersection(const cv::Vec4i& a, const cv::Vec4i& b);
+    void sortCorners(std::vector<cv::Point2f>& corners, cv::Point2f center);
+    static bool comparator(cv::Point2f a, cv::Point2f b);
 
 };
 
