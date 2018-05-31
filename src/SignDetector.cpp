@@ -13,22 +13,54 @@ SignDetector::SignDetector(const std::string &trainedSVMPath) {
 
 void SignDetector::detect(const cv::Mat &image, std::vector<cv::Mat> detectedSigns) {
     cv::Mat workingImage;
-    cv::GaussianBlur(image, workingImage, cv::Size(3,3), 0);
-    cv::Canny(workingImage, workingImage, 50, 200);
+    cv::cvtColor(image, workingImage, CV_BGR2GRAY);
+    cv::GaussianBlur(workingImage, workingImage, cv::Size(3,3), 0);
+    cv::adaptiveThreshold(workingImage, workingImage, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 7, 0);
+    //cv::Canny(workingImage, workingImage, 0, 255);
+    Util::showImage(workingImage);
 
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Vec4i> hierarchy;
+    cv::findContours(workingImage, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+    //cv::drawContours(workingImage, contours, -1, cv::Scalar(255, 0, 0), 3, 8, hierarchy);
+    Util::showImage(workingImage);
+
+    std::vector<std::vector<cv::Point>> rects;
+    for (int i = 0; i < contours.size(); i++) {
+        std::vector<cv::Point> rect;
+        cv::approxPolyDP(contours[i], rect, 3, true);
+        if (rect.size() == 4)
+            rects.push_back(rect);
+    }
+    cv::drawContours(workingImage, rects, -1, cv::Scalar(255, 0, 0), 3, 8);
+    Util::showImage(workingImage);
+
+/**
     std::vector<cv::Rect> rects;
     findRectangles(workingImage, rects);
 
     cv::Mat canvas = image;
     for (int i = 0; i < rects.size(); i++) {
-        cv::rectangle(canvas, rects[i], cv::Scalar(255, 0, 0));
+        cv::rectangle
+                (canvas, rects[i], cv::Scalar(255, 0, 0));
     }
     Util::showImage(canvas);
+   */
+
 }
 
 void SignDetector::findRectangles(const cv::Mat& image, std::vector<cv::Rect>& rectangles) {
     std::vector<cv::Vec4i> lines;
     cv::HoughLinesP(image, lines, 1, CV_PI/180, 15);
+
+    /**
+    cv::Mat canvas = image;
+    for (int i = 0; i < lines.size(); i++) {
+        cv::line(canvas, cv::Point2f(lines[i][0], lines[i][1]), cv::Point2f(lines[i][2], lines[i][3]), cv::Scalar(255,0,0), 2);
+    }
+    Util::showImage(canvas);
+     */
+
 
     int* poly = new int[lines.size()];
     for(int i=0;i<lines.size();i++)poly[i] = - 1;
@@ -78,7 +110,6 @@ void SignDetector::findRectangles(const cv::Mat& image, std::vector<cv::Rect>& r
             }
         }
     }
-    delete[] poly;
 
     for(int i=0;i<corners.size();i++){
         cv::Point2f center(0,0);
@@ -93,6 +124,8 @@ void SignDetector::findRectangles(const cv::Mat& image, std::vector<cv::Rect>& r
             corners[i][2].y - corners[i][0].y);
         rectangles.push_back(rect);
     }
+
+    delete[] poly;
 }
 
 cv::Point2f SignDetector::lineIntersection(const cv::Vec4i &a, const cv::Vec4i &b) {

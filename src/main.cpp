@@ -6,7 +6,7 @@
 #define DATASET_PATH "/home/sibirsky/ssr-dataset/train/"
 #define SVM_MODEL_PATH "/home/sibirsky/ssr-dataset/svm.xml"
 
-#define TEST_IMAGE "/home/sibirsky/autosave23_10_2012_09_57_57_3.jpg"
+#define TEST_IMAGE "/home/sibirsky/autosave16_04_2013_11_46_48_0.jpg"
 
 #include <opencv2/opencv.hpp>
 
