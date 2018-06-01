@@ -23,6 +23,8 @@ private:
     cv::Point2f lineIntersection(const cv::Vec4i& a, const cv::Vec4i& b);
     void sortCorners(std::vector<cv::Point2f>& corners, cv::Point2f center);
     static bool comparator(cv::Point2f a, cv::Point2f b);
+    static bool compare(cv::Point& a, cv::Point& b);
+    void sortRectCorners(const std::vector<cv::Point>& corners, std::vector<cv::Point>& sorted);
 
 };
 

@@ -25,107 +25,55 @@ void SignDetector::detect(const cv::Mat &image, std::vector<cv::Mat> detectedSig
     //cv::drawContours(workingImage, contours, -1, cv::Scalar(255, 0, 0), 3, 8, hierarchy);
     Util::showImage(workingImage);
 
+    std::vector<cv::Rect> rectangles;
     std::vector<std::vector<cv::Point>> rects;
+    int maxArea = 0;
     for (int i = 0; i < contours.size(); i++) {
         std::vector<cv::Point> rect;
         cv::approxPolyDP(contours[i], rect, 3, true);
-        if (rect.size() == 4)
+        if (rect.size() == 4) {
             rects.push_back(rect);
+            cv::Point cur = rect[0];
+            int xmin = cur.x;
+            int ymin = cur.y;
+            int xmax = cur.x;
+            int ymax = cur.y;
+            for (int i = 1; i < rect.size(); i++) {
+                cv::Point cur = rect[i];
+                if (cur.x < xmin)
+                    xmin = cur.x;
+                else if (cur.x > xmax) {
+                    xmax = cur.x;
+                }
+                if (cur.y < ymin)
+                    ymin = cur.y;
+                else if (cur.y > ymax) {
+                    ymax = cur.y;
+                }
+            }
+            cv::Rect rectangle(xmin, ymin, xmax-xmin, ymax-ymin);
+            rectangles.push_back(rectangle);
+            int area = (xmax-xmin)*(ymax-ymin);
+            if (area > maxArea)
+                maxArea = area;
+        }
     }
+
     cv::drawContours(workingImage, rects, -1, cv::Scalar(255, 0, 0), 3, 8);
     Util::showImage(workingImage);
 
-/**
-    std::vector<cv::Rect> rects;
-    findRectangles(workingImage, rects);
-
     cv::Mat canvas = image;
-    for (int i = 0; i < rects.size(); i++) {
-        cv::rectangle
-                (canvas, rects[i], cv::Scalar(255, 0, 0));
+    for (int i = 0; i < rectangles.size(); i++) {
+        if (rectangles[i].area() >= 0.2*maxArea)
+            cv::rectangle(canvas, rectangles[i], cv::Scalar(255, 0, 0));
     }
     Util::showImage(canvas);
-   */
 
 }
 
 void SignDetector::findRectangles(const cv::Mat& image, std::vector<cv::Rect>& rectangles) {
     std::vector<cv::Vec4i> lines;
     cv::HoughLinesP(image, lines, 1, CV_PI/180, 15);
-
-    /**
-    cv::Mat canvas = image;
-    for (int i = 0; i < lines.size(); i++) {
-        cv::line(canvas, cv::Point2f(lines[i][0], lines[i][1]), cv::Point2f(lines[i][2], lines[i][3]), cv::Scalar(255,0,0), 2);
-    }
-    Util::showImage(canvas);
-     */
-
-
-    int* poly = new int[lines.size()];
-    for(int i=0;i<lines.size();i++)poly[i] = - 1;
-    int curPoly = 0;
-    std::vector<std::vector<cv::Point2f>> corners;
-    for (int i = 0; i < lines.size(); i++)
-    {
-        for (int j = i+1; j < lines.size(); j++)
-        {
-
-            cv::Point2f pt = lineIntersection(lines[i], lines[j]);
-            if (pt.x >= 0 && pt.y >= 0){
-
-                if(poly[i]==-1&&poly[j] == -1){
-                    std::vector<cv::Point2f> v;
-                    v.push_back(pt);
-                    corners.push_back(v);
-                    poly[i] = curPoly;
-                    poly[j] = curPoly;
-                    curPoly++;
-                    continue;
-                }
-                if(poly[i]==-1&&poly[j]>=0){
-                    corners[poly[j]].push_back(pt);
-                    poly[i] = poly[j];
-                    continue;
-                }
-                if(poly[i]>=0&&poly[j]==-1){
-                    corners[poly[i]].push_back(pt);
-                    poly[j] = poly[i];
-                    continue;
-                }
-                if(poly[i]>=0&&poly[j]>=0){
-                    if(poly[i]==poly[j]){
-                        corners[poly[i]].push_back(pt);
-                        continue;
-                    }
-
-                    for(int k=0;k<corners[poly[j]].size();k++){
-                        corners[poly[i]].push_back(corners[poly[j]][k]);
-                    }
-
-                    corners[poly[j]].clear();
-                    poly[j] = poly[i];
-                    continue;
-                }
-            }
-        }
-    }
-
-    for(int i=0;i<corners.size();i++){
-        cv::Point2f center(0,0);
-        if(corners[i].size()<4)continue;
-        for(int j=0;j<corners[i].size();j++){
-            center += corners[i][j];
-        }
-        center *= (1. / corners[i].size());
-        sortCorners(corners[i], center);
-
-        cv::Rect rect(corners[i][0].x, corners[i][0].y, corners[i][2].x - corners[i][0].x,
-            corners[i][2].y - corners[i][0].y);
-        rectangles.push_back(rect);
-    }
-
-    delete[] poly;
 }
 
 cv::Point2f SignDetector::lineIntersection(const cv::Vec4i &a, const cv::Vec4i &b) {
@@ -149,28 +97,17 @@ cv::Point2f SignDetector::lineIntersection(const cv::Vec4i &a, const cv::Vec4i &
 }
 
 void SignDetector::sortCorners(std::vector<cv::Point2f> &corners, cv::Point2f center) {
-    std::vector<cv::Point2f> top, bot;
-    for (int i = 0; i < corners.size(); i++)
-    {
-        if (corners[i].y < center.y)
-            top.push_back(corners[i]);
-        else
-            bot.push_back(corners[i]);
-    }
-    std::sort(top.begin(),top.end(),comparator);
-    std::sort(bot.begin(),bot.end(),comparator);
-    cv::Point2f tl = top[0];
-    cv::Point2f tr = top[top.size()-1];
-    cv::Point2f bl = bot[0];
-    cv::Point2f br = bot[bot.size()-1];
-    corners.clear();
-    corners.push_back(tl);
-    corners.push_back(tr);
-    corners.push_back(br);
-    corners.push_back(bl);
+
+}
+
+void SignDetector::sortRectCorners(const std::vector<cv::Point>& corners, std::vector<cv::Point>& sorted) {
+
 }
 
 bool SignDetector::comparator(cv::Point2f a, cv::Point2f b) {
     return a.x<b.x;
 }
 
+bool SignDetector::compare(cv::Point& a, cv::Point& b) {
+    return (a.x < b.x) && (a.y > b.y);
+}
