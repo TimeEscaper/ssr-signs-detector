@@ -5,10 +5,10 @@
 #include "../include/DescriptorFactory.h"
 
 void DescriptorFactory::computeHOG(const cv::Mat& image, std::vector<float>& descriptors) {
-    cv::HOGDescriptor hogDescriptor(cv::Size(16, 16), //windowSize
-            cv::Size(4,4), //blockSize
-            cv::Size(4,4), //blockStride,
-            cv::Size(2,2), //cellSize,
+    cv::HOGDescriptor hogDescriptor(cv::Size(32, 32), //windowSize
+            cv::Size(16,16), //blockSize
+            cv::Size(8,8), //blockStride,
+            cv::Size(8,8), //cellSize,
             9); //nbins
 
 

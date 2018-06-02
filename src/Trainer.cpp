@@ -24,22 +24,15 @@ cv::Ptr<cv::SVM> Trainer::train(const std::string &resultFile) {
     std::cout << "Loading dataset" << std::endl;
     DataSet dataSet;
     dataSet.load(trainDataDir);
-    std::vector<cv::Mat> images;
-    std::vector<float> labels;
-    loadImagesAndLabels(dataSet, images, labels);
-
-    std::cout << "Computing descriptors" << std::endl;
     std::vector<std::vector<float>> allDescriptors;
-    for (int i = 0; i < images.size(); i++) {
-        std::vector<float> descriptors;
-        DescriptorFactory::computeHOG(images[i], descriptors);
-        allDescriptors.push_back(descriptors);
-    }
+    std::vector<float> labels;
+    loadDescriptorsAndLabels(dataSet, allDescriptors, labels);
 
     std::cout << "Converitng to cv::Mat" << std::endl;
     int descriptorSize = allDescriptors[0].size();
-    cv::Mat descriptorsMat(allDescriptors.size(), descriptorSize, CV_32FC1);
-    cv::Mat labelsMat(labels.size(), 1, CV_32FC1);
+    int secondSize = allDescriptors[1].size();
+    cv::Mat descriptorsMat(allDescriptors.size(), descriptorSize, CV_32F);
+    cv::Mat labelsMat(labels.size(), 1, CV_32F);
     for (int i = 0; i < allDescriptors.size(); i++) {
         labelsMat.at<float>(i,0) = labels[i];
         for (int j = 0; j < descriptorSize; j++) {
@@ -57,21 +50,29 @@ cv::Ptr<cv::SVM> Trainer::train(const std::string &resultFile) {
     return ptr;
 }
 
-void Trainer::loadImagesAndLabels(DataSet &dataSet, std::vector<cv::Mat>& images,
+void Trainer::loadDescriptorsAndLabels(DataSet &dataSet, std::vector<std::vector<float>>& descriptors,
                                   std::vector<float>& labels) {
     for (int i = 0; i < dataSet.getImages()->size(); i++) {
         DataSetImage* img = &((*dataSet.getImages())[i]);
         cv::Mat mat = cv::imread(img->getFileName());
         for (int j = 0; j < img->getSigns()->size(); j++) {
+
             DataSetSign* sign = &((*img->getSigns())[j]);
             cv::Rect signRoi = cv::Rect(sign->getXFrom(), sign->getYFrom(), sign->getWidth(),
                     sign->getHeight());
             cv::Mat signImage = cv::Mat(mat, signRoi);
-            images.push_back(signImage);
+            cv::resize(signImage, signImage, cv::Size(IMG_ROI_WIDTH, IMG_ROI_HEIGHT), 0, 0, CV_INTER_LINEAR);
+            std::vector<float> signDescriptor;
+            DescriptorFactory::computeHOG(signImage, signDescriptor);
+            descriptors.push_back(signDescriptor);
             labels.push_back(1.0);
-            cv::Rect randRoi = cv::Rect((std::rand()%500+1), (std::rand()%50+1), IMG_ROI_WIDTH, IMG_ROI_WIDTH);
+
+
+            cv::Rect randRoi = cv::Rect((std::rand()%500+1), (std::rand()%500+1), IMG_ROI_WIDTH, IMG_ROI_HEIGHT);
             cv::Mat randImage = cv::Mat(mat, randRoi);
-            images.push_back(randImage);
+            std::vector<float> randDescriptor;
+            DescriptorFactory::computeHOG(randImage, randDescriptor);
+            descriptors.push_back(randDescriptor);
             labels.push_back(0.0);
         }
     }

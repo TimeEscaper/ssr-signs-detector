@@ -10,7 +10,7 @@
 class Util {
 
 public:
-    static void showImage(const cv::Mat& image);
+    static void showImage(const cv::Mat& image, const char* label);
 };
 
 

@@ -20,7 +20,8 @@ private:
     std::string trainDataDir;
 
     /** TODO: add const */
-    void loadImagesAndLabels(DataSet& dataSet, std::vector<cv::Mat>& images, std::vector<float>& labels);
+    void loadDescriptorsAndLabels(DataSet& dataSet, std::vector<std::vector<float>>& descriptors,
+                                  std::vector<float>& labels);
 };
 
 

@@ -19,8 +19,11 @@ public:
 private:
     cv::SVM svm;
 
-    void findPolys(const std::vector<std::vector<cv::Point>>& contours, std::vector<cv::Rect>& polys);
-    cv::Rect envelopeRect(const std::vector<cv::Point>& poly);
+    cv::Mat preProcess(const cv::Mat& image);
+    void findPolys(const cv::Mat& image, std::vector<cv::Rect>& polys);
+    cv::Rect polyEnvelopeRect(const std::vector<cv::Point> &poly);
+    void findCircles(const cv::Mat& image, std::vector<cv::Rect> envelopeRects);
+    bool applyClassifier(const cv::Mat& image);
 
 };
 

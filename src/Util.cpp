@@ -4,9 +4,9 @@
 
 #include "../include/Util.h"
 
-void Util::showImage(const cv::Mat &image) {
-    cv::namedWindow("Image");
-    cv::imshow("Image", image);
+void Util::showImage(const cv::Mat &image, const char* label) {
+    cv::namedWindow(label);
+    cv::imshow(label, image);
     cv::waitKey(10000);
-    cv::destroyWindow("Image");
+    cv::destroyWindow(label);
 }
