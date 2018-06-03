@@ -14,7 +14,7 @@ class Trainer {
 
 public:
     Trainer(const std::string& trainDataDir);
-    cv::Ptr<cv::SVM> train(const std::string& resultFile);
+    void train(const std::string& resultFile);
 
 private:
     std::string trainDataDir;

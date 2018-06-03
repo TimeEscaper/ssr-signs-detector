@@ -11,15 +11,20 @@ Trainer::Trainer(const std::string &trainDataDir) {
     this->trainDataDir = trainDataDir;
 }
 
-cv::Ptr<cv::SVM> Trainer::train(const std::string &resultFile) {
-    cv::SVM* svm = new cv::SVM();
+void Trainer::train(const std::string &resultFile) {
+    cv::SVM svm;
     cv::SVMParams svmParams;
 
     std::cout << "Setting SVM parameters" << std::endl;
     svmParams.svm_type = cv::SVM::C_SVC;
-    svmParams.kernel_type = cv::SVM::RBF;
-    svmParams.C = 100.0;
-    svmParams.gamma = 0.50625;
+    svmParams.kernel_type = cv::SVM::LINEAR;
+    svmParams.C = 10;
+    svmParams.p = 0;
+    svmParams.nu = 0;
+    svmParams.coef0 = 0;
+    svmParams.gamma = 0;
+    svmParams.degree = 0;
+    svmParams.term_crit = cv::TermCriteria(CV_TERMCRIT_ITER+CV_TERMCRIT_EPS, 1000, 0.000001);
 
     std::cout << "Loading dataset" << std::endl;
     DataSet dataSet;
@@ -30,7 +35,6 @@ cv::Ptr<cv::SVM> Trainer::train(const std::string &resultFile) {
 
     std::cout << "Converitng to cv::Mat" << std::endl;
     int descriptorSize = allDescriptors[0].size();
-    int secondSize = allDescriptors[1].size();
     cv::Mat descriptorsMat(allDescriptors.size(), descriptorSize, CV_32F);
     cv::Mat labelsMat(labels.size(), 1, CV_32F);
     for (int i = 0; i < allDescriptors.size(); i++) {
@@ -41,13 +45,14 @@ cv::Ptr<cv::SVM> Trainer::train(const std::string &resultFile) {
     }
 
     std::cout << "Training SVM" << std::endl;
-    svm->train(descriptorsMat, labelsMat, cv::Mat(), cv::Mat(), svmParams);
-    svm->save(resultFile.c_str());
+    svm.train_auto(descriptorsMat, labelsMat, cv::Mat(), cv::Mat(), svmParams, 10);
+    cv::SVMParams newParams = svm.get_params();
+    std::cout << "\ndegree " << newParams.degree << "\ngamma " << newParams.gamma <<
+              "\nnu " << newParams.nu << "\ncoef0"  << newParams.coef0 <<
+              "\np " << newParams.p << "\nc " << newParams.C << std::endl;
+    svm.save(resultFile.c_str());
 
     std::cout << "SVM trained" << std::endl;
-
-    cv::Ptr<cv::SVM> ptr = cv::Ptr<cv::SVM>(svm);
-    return ptr;
 }
 
 void Trainer::loadDescriptorsAndLabels(DataSet &dataSet, std::vector<std::vector<float>>& descriptors,
@@ -67,13 +72,13 @@ void Trainer::loadDescriptorsAndLabels(DataSet &dataSet, std::vector<std::vector
             descriptors.push_back(signDescriptor);
             labels.push_back(1.0);
 
-
             cv::Rect randRoi = cv::Rect((std::rand()%500+1), (std::rand()%500+1), IMG_ROI_WIDTH, IMG_ROI_HEIGHT);
             cv::Mat randImage = cv::Mat(mat, randRoi);
             std::vector<float> randDescriptor;
             DescriptorFactory::computeHOG(randImage, randDescriptor);
             descriptors.push_back(randDescriptor);
-            labels.push_back(0.0);
+            labels.push_back((float)-1.0);
+
         }
     }
 }

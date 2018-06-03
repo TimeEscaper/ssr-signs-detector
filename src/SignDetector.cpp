@@ -8,6 +8,8 @@
 #include "../include/Util.h"
 #include "../include/DescriptorFactory.h"
 #include "../include/ImageConstants.h"
+#include "../include/Trainer.h"
+
 
 SignDetector::SignDetector(const std::string &trainedSVMPath) {
     svm.load(trainedSVMPath.c_str());
@@ -19,10 +21,6 @@ void SignDetector::detect(const cv::Mat &image, std::vector<cv::Mat> detectedSig
 
     std::vector<cv::Rect> polys;
     findPolys(workingImage, polys);
-
-    //cv::Mat grayed;
-    //cv::cvtColor(image, grayed, CV_BGR2GRAY);
-    //findCircles(grayed, polys);
 
     cv::Mat canvas = image;
     for (int i = 0; i < polys.size(); i++) {
@@ -79,13 +77,29 @@ void SignDetector::findPolys(const cv::Mat& image, std::vector<cv::Rect>& polys)
 
     for (int i = 0; i < rectangles.size(); i++) {
         cv::Rect rect = rectangles[i];
-        if (rect.area() > 0.2*maxRectArea)
-            polys.push_back(rect);
+        if (rect.area() > 0.2*maxRectArea) {
+            double relation;
+            if (rect.width > rect.height)
+                relation = (double)rect.height / (double)rect.width;
+            else
+                relation = (double)rect.width / (double)rect.height;
+            if (relation > 0.2)
+                polys.push_back(rect);
+        }
     }
+
     for (int i = 0; i < triangles.size(); i++) {
         cv::Rect trian = triangles[i];
-        if (trian.area() > 0.2*maxTrianArea)
-            polys.push_back(trian);
+        if (trian.area() > 0.2*maxTrianArea) {
+            double relation;
+            if (trian.width > trian.height) {
+                relation = (double)trian.height / (double)trian.width;
+            } else {
+                relation = (double)trian.width / (double)trian.height;
+            }
+            if (relation > 0.4)
+                polys.push_back(trian);
+        }
     }
 }
 
@@ -131,6 +145,9 @@ bool SignDetector::applyClassifier(const cv::Mat &image) {
 
     int descriptorSize = hogDescriptor.size();
     cv::Mat descriptorMat(1, descriptorSize, CV_32F);
+    for (int i = 0; i < descriptorSize; i++) {
+        descriptorMat.at<float>(0, i) = hogDescriptor[i];
+    }
     cv::Mat response(1, 1, CV_32F);
 
     svm.predict(descriptorMat, response);
