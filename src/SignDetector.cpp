@@ -2,8 +2,6 @@
 // Created by sibirsky on 30.05.18.
 //
 
-#include <algorithm>
-
 #include "../include/SignDetector.h"
 #include "../include/Util.h"
 #include "../include/DescriptorFactory.h"
@@ -21,6 +19,7 @@ void SignDetector::detect(const cv::Mat &image, std::vector<cv::Mat> detectedSig
 
     std::vector<cv::Rect> polys;
     findPolys(workingImage, polys);
+    findCircles(workingImage, polys);
 
     cv::Mat canvas = image;
     for (int i = 0; i < polys.size(); i++) {
@@ -132,9 +131,9 @@ void SignDetector::findCircles(const cv::Mat &image, std::vector<cv::Rect> envel
     for (int i = 0; i < circles.size(); i++) {
         cv::Point center = cv::Point(circles[i][0], circles[i][1]);
         int radius = circles[i][2];
-        cv::circle(canvas, center, radius, cv::Scalar(255,0,0), 3, 8, 0);
+        cv::Rect rect(center.x-radius, center.y-radius, 2*radius, 2*radius);
+        envelopeRects.push_back(rect);
     }
-    Util::showImage(canvas, "Circles");
 }
 
 bool SignDetector::applyClassifier(const cv::Mat &image) {
